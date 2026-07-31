@@ -1,0 +1,74 @@
+[
+  {
+    "id": "exp-001",
+    "user_id": "default_user",
+    "title": "Supermarket Grocery",
+    "amount": 3200.0,
+    "category": "Food",
+    "date": "2026-07-28"
+  },
+  {
+    "id": "exp-002",
+    "user_id": "default_user",
+    "title": "Apparel & Footwear",
+    "amount": 3000.0,
+    "category": "Shopping",
+    "date": "2026-07-25"
+  },
+  {
+    "id": "exp-003",
+    "user_id": "default_user",
+    "title": "Fuel & Transport",
+    "amount": 2000.0,
+    "category": "Transport",
+    "date": "2026-07-20"
+  },
+  {
+    "id": "exp-004",
+    "user_id": "default_user",
+    "title": "Electricity & Water Bill",
+    "amount": 1850.0,
+    "category": "Utilities",
+    "date": "2026-07-15"
+  },
+  {
+    "id": "exp-005",
+    "user_id": "default_user",
+    "title": "Dining Out & Movies",
+    "amount": 1400.0,
+    "category": "Entertainment",
+    "date": "2026-07-10"
+  },
+  {
+    "id": "exp-006",
+    "user_id": "default_user",
+    "title": "Pharmacy & Health Supplies",
+    "amount": 950.0,
+    "category": "Healthcare",
+    "date": "2026-07-08"
+  },
+  {
+    "id": "exp-007",
+    "user_id": "default_user",
+    "title": "House Maintenance & Repairs",
+    "amount": 2500.0,
+    "category": "Housing",
+    "date": "2026-07-05"
+  },
+  {
+    "id": "exp-008",
+    "user_id": "default_user",
+    "title": "Coffee & Bakery Snacks",
+    "amount": 650.0,
+    "category": "Food",
+    "date": "2026-07-02"
+  },
+  {
+    "id": "exp-009",
+    "user_id": "default_user",
+    "title": "Online Streaming Subscriptions",
+    "amount": 800.0,
+    "category": "Entertainment",
+    "date": "2026-07-01"
+  }
+]

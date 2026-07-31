@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Expense Tracker - INR Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Main Application Wrapper -->
+  <div class="app-container">
+    
+    <!-- Top Header Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <!-- User Avatar & Profile Dropdown Container -->
+        <div class="user-avatar-wrapper">
+          <div class="user-avatar" id="userAvatarBtn" title="Click for Account Options">
+            <span class="avatar-icon">👤</span>
+          </div>
+
+          <!-- Profile Dropdown Menu -->
+          <div id="profileDropdown" class="profile-dropdown hidden">
+            <div class="dropdown-header">
+              <span id="dropdownUsername" class="dropdown-user-name">Demo User</span>
+              <span id="dropdownUserEmail" class="dropdown-user-email">demo@expensetracker.in</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button id="dropdownProfileBtn" class="dropdown-item">
+              👤 My Profile
+            </button>
+            <button id="dropdownSettingsBtn" class="dropdown-item">
+              ⚙️ Budget Settings
+            </button>
+            <div class="dropdown-divider"></div>
+            <button id="dropdownLogoutBtn" class="dropdown-item dropdown-danger">
+              🚪 Logout
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="title-row">
+            <h1 class="welcome-title">Smart Expense Tracker</h1>
+            <span class="live-sync-badge" title="Real-time multi-tab sync active">
+              <span class="pulse-dot"></span> Live Sync
+            </span>
+          </div>
+          <p class="welcome-sub" id="welcomeUserSub">Manage budget & analytics in INR (₹)</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Login / Sign Up Button (Hidden when authenticated) -->
+        <button id="authModalBtn" class="btn-secondary">
+          🔑 Login / Sign Up
+        </button>
+        <button id="themeToggleBtn" class="btn-icon" title="Toggle Light/Dark Theme">
+          🌙
+        </button>
+        <button id="exportCsvBtn" class="btn-secondary">
+          📥 Export CSV
+        </button>
+        <button id="viewDocsBtn" class="btn-secondary" onclick="window.open('/docs', '_blank')">
+          ⚡ API Docs
+        </button>
+        <button id="openAddModalBtn" class="btn-primary">
+          <span class="plus-icon">+</span> Add Expense
+        </button>
+      </div>
+    </header>
+
+    <!-- Top Budget Warning Bar (Displays ONLY when budget is 100%+ exceeded) -->
+    <div id="budgetAlertBar" class="budget-alert-bar hidden">
+      <div class="alert-content">
+        <span class="alert-icon">⚠️</span>
+        <span id="budgetAlertMsg">Budget Exceeded! You have spent 100% of your target limit.</span>
+      </div>
+      <button id="editBudgetBtn" class="btn-link">Adjust Budget Target</button>
+    </div>
+
+    <!-- Date Range & Search Filter Bar -->
+    <div class="card filter-bar-card">
+      <div class="filter-controls">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search title or category..." class="search-input-field">
+        </div>
+
+        <div class="date-range-box">
+          <label>From:</label>
+          <input type="date" id="startDateInput" class="date-input">
+          <label>To:</label>
+          <input type="date" id="endDateInput" class="date-input">
+          <button id="clearFiltersBtn" class="btn-small">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Main Grid Layout -->
+    <main class="dashboard-grid">
+      
+      <!-- Left Column: Balance Card, Bar Chart, Transactions List -->
+      <section class="grid-col-main">
+        
+        <!-- Total Balance Credit Card Component -->
+        <div class="card credit-card">
+          <div class="card-chip-row">
+            <span class="card-type">SMART WALLET • INR REAL PERSISTENCE</span>
+            <div class="card-chip"></div>
+          </div>
+          <div class="card-balance-section">
+            <span class="balance-label">Remaining Monthly Budget</span>
+            <h2 id="totalBalanceAmount" class="balance-amount">₹13,550.00</h2>
+            <div class="budget-meta">
+              <span>Monthly Budget: <strong id="budgetTargetDisplay">₹25,000.00</strong></span>
+              <span id="spentPercentageText" class="spent-pct">46% Spent</span>
+            </div>
+          </div>
+          <div class="card-footer-row">
+            <span class="card-number">•••• •••• •••• 2026</span>
+            <div class="card-mastercard-logo">
+              <span class="circle circle-red"></span>
+              <span class="circle circle-yellow"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Analytics Bar Chart -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Monthly Spending Trends</h3>
+            <span class="badge-tag">2026 Monthly Breakdown</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="monthlyBarChart"></canvas>
+            <div id="monthlyChartEmptyOverlay" class="chart-empty-overlay hidden">
+              <span class="empty-chart-icon">📊</span>
+              <p class="empty-chart-text">Add your first expense to see insights.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions Section -->
+        <div class="card transactions-card">
+          <div class="card-header">
+            <h3>Recent Transactions</h3>
+            <span class="item-count-badge" id="txCountBadge">0 Items</span>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="category-pills" id="categoryPills">
+            <button class="pill active" data-category="ALL">All</button>
+            <button class="pill" data-category="Food & Drinks">Food & Drinks</button>
+            <button class="pill" data-category="Transport">Transport</button>
+            <button class="pill" data-category="Shopping">Shopping</button>
+            <button class="pill" data-category="Utilities">Utilities</button>
+            <button class="pill" data-category="Entertainment">Entertainment</button>
+            <button class="pill" data-category="Healthcare">Healthcare</button>
+            <button class="pill" data-category="Housing">Housing</button>
+          </div>
+
+          <!-- Sticky Frozen Header Row for Transactions -->
+          <div class="transactions-table-header">
+            <span class="th-col th-title">Expense Title & Category</span>
+            <span class="th-col th-amount">Amount (₹)</span>
+          </div>
+
+          <!-- Transactions List Container -->
+          <div class="transactions-list" id="transactionsList">
+            <div class="loading-spinner">Loading expenses...</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Quick Stats, Donut Chart, Category Budgets -->
+      <section class="grid-col-side">
+        
+        <!-- Summary Stat Cards Row (3 Metrics: Total Spend, Daily Avg, Highest Category) -->
+        <div class="stat-cards-row">
+          <div class="card stat-card stat-purple">
+            <div class="stat-icon">💰</div>
+            <span class="stat-label">Total Expense</span>
+            <h3 id="statTotalExpense">₹11,450.00</h3>
+            <span class="stat-sub" id="statTotalCountSub">5 items recorded</span>
+          </div>
+          <div class="card stat-card stat-orange">
+            <div class="stat-icon">📈</div>
+            <span class="stat-label">Daily Avg Spend</span>
+            <h3 id="statDailyAvg">₹2,290.00</h3>
+            <span class="stat-sub">Based on active days</span>
+          </div>
+          <div class="card stat-card stat-teal" title="Category with the highest cumulative spending amount">
+            <div class="stat-icon">🏆</div>
+            <span class="stat-label">Highest Category</span>
+            <h3 id="statHighestCategory">No expenses yet</h3>
+            <span class="stat-sub" id="statHighestCategorySub">No category data</span>
+          </div>
+        </div>
+
+        <!-- Category Distribution Donut Chart -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Category Breakdown</h3>
+            <span class="view-all-link">Live Metrics</span>
+          </div>
+          <div class="donut-chart-wrapper">
+            <canvas id="categoryDonutChart"></canvas>
+            <div id="donutChartEmptyOverlay" class="chart-empty-overlay hidden">
+              <span class="empty-chart-icon">🍩</span>
+              <p class="empty-chart-text">Add your first expense to see insights.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Spend Progress Bars -->
+        <div class="card progress-card">
+          <div class="card-header">
+            <h3>Category Spending</h3>
+          </div>
+          <div id="categoryProgressContainer" class="progress-list">
+            <!-- Progress bars injected dynamically via JS -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Floating Action Button (+ Quick Add) -->
+    <button id="fabBtn" class="fab-btn" title="Add Expense">+</button>
+
+  </div>
+
+  <!-- Add Expense Modal Dialog -->
+  <div id="addModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Expense</h3>
+        <button id="closeModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <form id="addExpenseForm" class="modal-form" novalidate>
+        <div class="form-group">
+          <label for="expenseTitle">Expense Title *</label>
+          <input type="text" id="expenseTitle" placeholder="e.g. Supermarket Grocery, Apparel" required>
+          <span class="field-error-msg" id="expenseTitleError"></span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="expenseAmount">Amount (₹ INR) *</label>
+            <input type="number" id="expenseAmount" step="0.01" min="0.01" placeholder="e.g. 3200.00" required>
+            <span class="field-error-msg" id="expenseAmountError"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="expenseCategory">Category *</label>
+            <select id="expenseCategory" required>
+              <option value="Food & Drinks">Food & Drinks</option>
+              <option value="Transport">Transport</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Housing">Housing</option>
+              <option value="Other">Other</option>
+            </select>
+            <span class="field-error-msg" id="expenseCategoryError"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="expenseDate">Date *</label>
+          <input type="date" id="expenseDate" required>
+          <span class="field-error-msg" id="expenseDateError"></span>
+        </div>
+
+        <details class="advanced-options-toggle">
+          <summary>⚙️ Advanced Options (Custom ID)</summary>
+          <div class="form-group" style="margin-top: 10px;">
+            <label for="expenseCustomId">Custom ID (Optional)</label>
+            <input type="text" id="expenseCustomId" placeholder="e.g. exp-101 (Auto-generated if empty)">
+          </div>
+        </details>
+
+        <div class="modal-footer">
+          <button type="button" id="cancelModalBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" id="saveExpenseSubmitBtn" class="btn-primary">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- User Profile Info Modal -->
+  <div id="profileModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>User Profile</h3>
+        <button id="closeProfileModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="profile-details-body">
+        <div class="profile-avatar-large">👤</div>
+        <h4 id="profUsername">Demo User</h4>
+        <p id="profEmail" class="text-muted">demo@expensetracker.in</p>
+        <div class="profile-meta-card">
+          <div class="meta-item">
+            <span>Account Type</span>
+            <strong>Standard User</strong>
+          </div>
+          <div class="meta-item">
+            <span>Joined</span>
+            <strong id="profJoinedDate">July 2026</strong>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="closeProfileBtn2" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Authentication Modal (Login / Sign Up) -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-content auth-modal-content">
+      <div class="modal-header">
+        <div class="auth-tabs-pill">
+          <button id="loginTabBtn" class="auth-tab-btn active">Login</button>
+          <button id="registerTabBtn" class="auth-tab-btn">Create Account</button>
+        </div>
+        <button id="closeAuthModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <!-- In-Modal Alert Banners -->
+      <div id="authSuccessAlert" class="auth-alert-success hidden">
+        <span>🎉 Account created successfully! Please log in below.</span>
+      </div>
+      <div id="authErrorAlert" class="auth-alert-error hidden">
+        <span id="authErrorAlertMsg"></span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="modal-form" novalidate>
+        <div class="form-group">
+          <label for="loginIdentifier">Email or Username *</label>
+          <input type="text" id="loginIdentifier" placeholder="e.g. harsh@example.com or harsh" required>
+          <span class="field-error-msg" id="loginIdentifierError"></span>
+        </div>
+
+        <div class="form-group">
+          <div class="label-with-link">
+            <label for="loginPassword">Password *</label>
+            <button type="button" id="forgotPasswordBtn" class="link-btn">Forgot Password?</button>
+          </div>
+          <div class="input-password-wrapper">
+            <input type="password" id="loginPassword" placeholder="••••••••" required>
+            <button type="button" class="toggle-pwd-btn" data-target="loginPassword" title="Show/Hide Password">👁️</button>
+          </div>
+          <span class="field-error-msg" id="loginPasswordError"></span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" id="loginSubmitBtn" class="btn-primary btn-full">
+            <span class="btn-text">Login</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="registerForm" class="modal-form hidden" novalidate>
+        <div class="form-group">
+          <label for="regUsername">Username *</label>
+          <input type="text" id="regUsername" placeholder="e.g. harsh" required minlength="3">
+          <span class="field-error-msg" id="regUsernameError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="regEmail">Email Address *</label>
+          <input type="email" id="regEmail" placeholder="e.g. harsh@example.com" required>
+          <span class="field-error-msg" id="regEmailError"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="regPassword">Password *</label>
+          <div class="input-password-wrapper">
+            <input type="password" id="regPassword" placeholder="Min 6 characters" required minlength="6">
+            <button type="button" class="toggle-pwd-btn" data-target="regPassword" title="Show/Hide Password">👁️</button>
+          </div>
+          <!-- Password Strength Indicator Bar & Text -->
+          <div class="pwd-strength-container">
+            <div id="pwdStrengthBar" class="pwd-strength-bar"></div>
+          </div>
+          <div class="strength-meta-row">
+            <span id="pwdStrengthText" class="pwd-strength-text"></span>
+            <span class="field-error-msg" id="regPasswordError"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regConfirmPassword">Confirm Password *</label>
+          <div class="input-password-wrapper">
+            <input type="password" id="regConfirmPassword" placeholder="Re-enter password" required>
+            <button type="button" class="toggle-pwd-btn" data-target="regConfirmPassword" title="Show/Hide Password">👁️</button>
+          </div>
+          <div class="confirm-meta-row">
+            <span id="confirmMatchText" class="confirm-match-text"></span>
+            <span class="field-error-msg" id="regConfirmPasswordError"></span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" id="registerSubmitBtn" class="btn-primary btn-full" disabled>
+            <span class="btn-text">Register Account</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Budget Target Modal -->
+  <div id="budgetModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Set Monthly Budget Target (₹)</h3>
+        <button id="closeBudgetModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <form id="budgetForm" class="modal-form" novalidate>
+        <div class="form-group">
+          <label for="budgetTargetInput">Monthly Target Budget (₹)</label>
+          <input type="number" id="budgetTargetInput" step="500" min="1000" placeholder="25000.00" required>
+          <span class="field-error-msg" id="budgetTargetError"></span>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelBudgetModalBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Save Budget Target</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Expense Confirmation Modal -->
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal-content confirm-modal-content">
+      <div class="modal-header">
+        <h3>Confirm Deletion</h3>
+        <button id="closeDeleteModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="confirm-modal-body">
+        <div class="confirm-icon-box">🗑️</div>
+        <h4 class="confirm-title">Delete this expense?</h4>
+        <p class="confirm-sub">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="cancelDeleteBtn" class="btn-secondary">Cancel</button>
+        <button type="button" id="confirmDeleteBtn" class="btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast-container"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
